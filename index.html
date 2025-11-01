@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puter AI API</title>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        body {
+          font-family: 'Courier New', monospace;
+          background: #0a0e1a;
+          color: #00ffa3;
+          padding: 20px;
+          margin: 0;
+        }
+        .status {
+          padding: 20px;
+          background: rgba(0, 255, 163, 0.1);
+          border: 2px solid #00ffa3;
+          border-radius: 10px;
+          margin: 20px 0;
+        }
+        pre {
+          background: rgba(0, 0, 0, 0.5);
+          padding: 15px;
+          border-radius: 8px;
+          overflow-x: auto;
+          color: #00e0ff;
+        }
+    </style>
+</head>
+<body>
+<div class="status">
+    <h1>🚀 Puter AI API Endpoint</h1>
+    <p><strong>Status:</strong> <span id="status">Initializing Puter SDK...</span></p>
+</div>
+
+<div class="status" id="result" style="display: none;">
+    <h2>📊 Response:</h2>
+    <pre id="output"></pre>
+</div>
+
+<div class="status" id="instructions">
+    <h2>📡 How to Use:</h2>
+    <p><strong>Method 1 - Direct URL (GET):</strong></p>
+    <code id="exampleUrl">Loading...</code>
+    <br><br>
+    <p><strong>Example:</strong></p>
+    <code id="exampleFull">Loading...</code>
+</div>
+
+<script>
+    const statusEl = document.getElementById('status');
+    const resultEl = document.getElementById('result');
+    const outputEl = document.getElementById('output');
+    const exampleUrlEl = document.getElementById('exampleUrl');
+    const exampleFullEl = document.getElementById('exampleFull');
+    const instructionsEl = document.getElementById('instructions');
+
+    // Wait for Puter SDK to load
+    async function initPuter() {
+      try {
+        // Wait a bit for Puter to fully initialize
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (typeof puter === 'undefined') {
+          throw new Error('Puter SDK not loaded');
+        }
+
+        statusEl.textContent = '✅ Ready - Puter SDK loaded';
+        statusEl.style.color = '#00ffa3';
+
+        // Set example URLs
+        const baseUrl = window.location.href.split('?')[0];
+        exampleUrlEl.textContent = baseUrl;
+        exampleFullEl.textContent = `${baseUrl}?prompt=YOUR_PROMPT&model=meta-llama/llama-4-maverick`;
+
+        // Check for URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const prompt = urlParams.get('prompt');
+        const model = urlParams.get('model');
+
+        if (prompt) {
+          // Hide instructions and show processing
+          instructionsEl.style.display = 'none';
+          resultEl.style.display = 'block';
+          outputEl.textContent = '⏳ Processing request...\n\nPrompt: ' + prompt + '\nModel: ' + (model || 'meta-llama/llama-4-maverick');
+
+          await processAIRequest(prompt, model);
+        }
+      } catch (error) {
+        statusEl.textContent = '❌ Error: ' + error.message;
+        statusEl.style.color = '#ff4444';
+        console.error('Initialization error:', error);
+      }
+    }
+
+    async function processAIRequest(prompt, model) {
+      try {
+        statusEl.textContent = '🤖 Sending to Puter AI...';
+
+        const response = await puter.ai.chat(prompt, {
+          model: model || 'meta-llama/llama-4-maverick',
+          stream: false
+        });
+
+        const result = {
+          success: true,
+          response: response.message.content,
+          model: model || 'meta-llama/llama-4-maverick',
+          timestamp: new Date().toISOString()
+        };
+
+        statusEl.textContent = '✅ Response received';
+        outputEl.textContent = JSON.stringify(result, null, 2);
+
+        // Also output as plain JSON for easy parsing
+        console.log('JSON Response:', result);
+
+      } catch (error) {
+        const errorResult = {
+          success: false,
+          error: error.message,
+          timestamp: new Date().toISOString()
+        };
+
+        statusEl.textContent = '❌ Request failed';
+        statusEl.style.color = '#ff4444';
+        outputEl.textContent = JSON.stringify(errorResult, null, 2);
+        outputEl.style.color = '#ff4444';
+
+        console.error('AI Request error:', error);
+      }
+    }
+
+    // Initialize when page loads
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPuter);
+    } else {
+      initPuter();
+    }
+
+    // Also try to init after a delay (in case SDK loads slowly)
+    setTimeout(initPuter, 2000);
+</script>
+</body>
+</html>
