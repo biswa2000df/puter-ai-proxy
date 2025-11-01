@@ -1,53 +1,55 @@
+<!DOCTYPE html>
 <html>
 <head>
-    <title>Puter AI Proxy</title>
-   
+    <meta charset="UTF-8">
+    <title>Puter AI API Simplified</title>
+    <script src="https://js.puter.com/v2/"></script>
 </head>
 <body>
-<script src="https://js.puter.com/v2/"></script>
+<pre id="output">Initializing...</pre>
+
 <script>
-    async function runAiPromptFromUrl() {
-        // 1. Get the query parameters from the window's URL
-        const urlParams = new URLSearchParams(window.location.search);
+    async function run() {
+        const outputEl = document.getElementById('output');
 
-        // 2. Get the specific 'prompt' and 'model' values
-        const prompt = urlParams.get('prompt');
-        const model = urlParams.get('model');
+        // Parse URL params
+        const params = new URLSearchParams(window.location.search);
+        const prompt = params.get('prompt');
+        const model = params.get('model') || 'meta-llama/llama-4-maverick';
 
-        // 3. Check if a prompt was provided.
         if (!prompt) {
-            puter.print("Error: No 'prompt' parameter found in the URL.");
+            outputEl.textContent = JSON.stringify({
+                success: false,
+                error: "No prompt provided. Use ?prompt=YOUR_TEXT&model=MODEL_NAME"
+            }, null, 2);
             return;
         }
 
-        // 4. Create the options object
-        const aiOptions = {
-            stream: false
-        };
-
-        // 5. If a model was provided in the URL, add it to the options
-        if (model) {
-            aiOptions.model = model;
-        }
-
-        // 6. Call the AI
         try {
-            const response = await puter.ai.chat(
-                prompt,
-                aiOptions
-            );
+            // Wait a moment for SDK to load
+            await new Promise(r => setTimeout(r, 500));
 
-            // This is the ONLY line that prints on success
-            puter.print(response.message.content);
+            const response = await puter.ai.chat(prompt, { model });
 
-        } catch (error) {
-            console.error("Error fetching AI response:", error);
-            puter.print("Error: " + error.message);
+            const result = {
+                success: true,
+                response: response.message.content,
+                model: model,
+                timestamp: new Date().toISOString()
+            };
+
+            outputEl.textContent = JSON.stringify(result, null, 2);
+
+        } catch (err) {
+            outputEl.textContent = JSON.stringify({
+                success: false,
+                error: err.message,
+                timestamp: new Date().toISOString()
+            }, null, 2);
         }
     }
 
-    // Run the function as soon as the page loads
-    runAiPromptFromUrl();
+    run();
 </script>
 </body>
 </html>
